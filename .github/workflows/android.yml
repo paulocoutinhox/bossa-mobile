@@ -91,3 +91,4 @@ jobs:
         python3 make.py run get-ndk
         python3 make.py run build-android
         python3 make.py run test-android
+        python3 make.py run install-android
