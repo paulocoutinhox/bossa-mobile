@@ -23,6 +23,8 @@ Tasks:
   - get-bossa
   - get-ndk
   - build-android
+  - test-android
+  - install-android
 """
 
 import os
@@ -83,6 +85,14 @@ def main(options):
     elif make_task == "build-android":
         run_task_build_android()
 
+    # test android
+    elif make_task == "test-android":
+        run_task_test_android()
+
+    # install android
+    elif make_task == "install-android":
+        run_task_install_android()
+
     # get wxWidgets
     elif make_task == "get-wx":
         run_task_get_wx()
@@ -90,10 +100,6 @@ def main(options):
     # get BOSSA
     elif make_task == "get-bossa":
         run_task_get_bossa()
-
-    # test android
-    elif make_task == "test-android":
-        run_task_test_android()
 
     # get ndk
     elif make_task == "get-ndk":
@@ -263,6 +269,35 @@ def is_test_user():
     return user == "paulo"
 
 
+def file_has_content(file, content):
+    with open(file) as f:
+        if content in f.read():
+            return True
+
+    return False
+
+
+def get_file_content(file):
+    file = open(file, mode="r")
+    content = file.read()
+    file.close()
+    return content
+
+
+def prepend_to_file(file, content):
+    file_content = content + "\n" + get_file_content(file)
+    file_dest = open(file, "w")
+    file_dest.write(file_content)
+    file_dest.close()
+
+
+def append_to_file(file, content):
+    file_content = get_file_content(file) + "\n" + content
+    file_dest = open(file, "w")
+    file_dest.write(file_content)
+    file_dest.close()
+
+
 def replace_in_file(filename, old_string, new_string):
     with open(filename) as f:
         s = f.read()
@@ -347,6 +382,26 @@ def run_task_test_android():
         check_call(command, cwd=install_dir, shell=True)
 
 
+def run_task_install_android():
+    debug("Install for Android...")
+
+    archs = ["arm64-v8a", "armeabi-v7a", "x86", "x86_64"]
+
+    dist_dir = os.path.join("dist", "android")
+    android_lib_dir = os.path.join(
+        "projects", "sample", "android", "app", "src", "main", "jniLibs"
+    )
+
+    for arch in archs:
+        install_dir = os.path.join(dist_dir, arch)
+        dest_dir = os.path.join(android_lib_dir, arch)
+
+        from_file = os.path.join(install_dir, "libbossac.so")
+        to_file = os.path.join(dest_dir, "libbossac.so")
+
+        copy2(from_file, to_file)
+
+
 def run_task_get_wx():
     wx_url = "https://github.com/wxWidgets/wxWidgets/releases/download/v3.1.4/wxWidgets-3.1.4.tar.bz2"
     target_dir = os.path.join("build")
@@ -398,11 +453,46 @@ def run_task_get_bossa():
 
     # patch
     debug("Patch: BOSSA")
-    replace_in_file(
-        os.path.join(target_dir, "BOSSA-master", "src", "bossac.cpp"),
-        'Version " VERSION "',
-        "1.9.1",
-    )
+
+    source_dir = os.path.join(target_dir, "BOSSA-master", "src")
+
+    # version
+    source_file = os.path.join(source_dir, "bossac.cpp")
+    if not file_has_content(source_file, "(BOSSA) 1.9.1"):
+        replace_in_file(
+            source_file, 'Version " VERSION "', "1.9.1",
+        )
+
+        debug("Applied: Bossac Version")
+
+    # android log
+    source_file = os.path.join(source_dir, "bossac.cpp")
+    if not file_has_content(source_file, "#include <android/log.h>"):
+        replace_in_file(
+            source_file,
+            "fprintf(stdout,",
+            '__android_log_print(ANDROID_LOG_DEBUG, "BOSSA",',
+        )
+
+        replace_in_file(
+            source_file,
+            "fprintf(stderr,",
+            '__android_log_print(ANDROID_LOG_ERROR, "BOSSA",',
+        )
+
+        content = "#include <android/log.h>"
+        prepend_to_file(source_file, content)
+
+        debug("Applied: Android Log")
+
+    # flutter functions
+    source_file = os.path.join(source_dir, "bossac.cpp")
+    if not file_has_content(source_file, 'extern "C"'):
+        content = get_file_content(os.path.join("patches", "bossac.cpp"))
+        append_to_file(source_file, content)
+
+        debug("Applied: Bossac Flutter Functions")
+
     debug("Patched: BOSSA")
 
 

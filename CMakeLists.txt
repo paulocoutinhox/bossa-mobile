@@ -87,6 +87,5 @@ endif()
 add_library(bossac SHARED ${ALL_FILES})
 
 if(${TARGET_SYSTEM} MATCHES "android")
-    #find_library(log-lib log)
-    #target_link_libraries(bossac ${log-lib})
+    target_link_libraries(bossac log android)
 endif()
