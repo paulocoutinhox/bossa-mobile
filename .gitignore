@@ -1,0 +1,11 @@
+Thumbs.db
+.DS_Store
+build
+dist
+.vscode
+*.zip
+*.tar
+*.tar.gz
+*.tar.bz2
+__pycache__
+*.pyc
