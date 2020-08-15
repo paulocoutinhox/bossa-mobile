@@ -44,7 +44,7 @@ class HomePageView extends StatefulWidget {
 }
 
 class _HomePageViewState extends State<HomePageView> {
-  final controller = TextEditingController(text: "bossac -p /dev/ttyS0");
+  final controller = TextEditingController(text: "bossac -i /dev/ttyS0");
 
   var consoleMessages = "> Output message will go here";
 

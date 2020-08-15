@@ -45,11 +45,20 @@ android {
         versionName flutterVersionName
     }
 
+    signingConfigs {
+        release {
+            keyAlias 'prsolucoes'
+            keyPassword "$System.env.PRS_ANDROID_CERT_PASSWORD"
+            storeFile file('/Users/paulo/Dropbox/Docs/ANDROID-CERTS/release.keystore')
+            storePassword "$System.env.PRS_ANDROID_CERT_PASSWORD"
+        }
+    }
+
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
         }
     }
 
