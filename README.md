@@ -1,4 +1,4 @@
-# BOSSA
+# BOSSA - MOBILE
 
 ![Bossa Mobile - Android](https://github.com/prsolucoes/bossa-mobile/workflows/Bossa%20Mobile%20-%20Android/badge.svg)
 
