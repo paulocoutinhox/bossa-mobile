@@ -22,9 +22,20 @@ Tasks:
   - get-wx
   - get-bossa
   - get-ndk
+
+  - patch-bossa
+  - remove-bossa
+  
+  - patch-android
   - build-android
   - test-android
   - install-android
+  
+  - patch-macos
+  - build-macos
+  - test-macos
+  - install-macos
+  - run-macos
 """
 
 import os
@@ -81,6 +92,10 @@ def main(options):
     if make_task == "clear":
         run_task_clear()
 
+    # patch android library
+    elif make_task == "patch-android":
+        run_task_patch_android()
+
     # build android library
     elif make_task == "build-android":
         run_task_build_android()
@@ -93,13 +108,41 @@ def main(options):
     elif make_task == "install-android":
         run_task_install_android()
 
-    # get wxWidgets
+    # patch macos library
+    elif make_task == "patch-macos":
+        run_task_patch_macos()
+
+    # build macos library
+    elif make_task == "build-macos":
+        run_task_build_macos()
+
+    # test macos
+    elif make_task == "test-macos":
+        run_task_test_macos()
+
+    # install macos
+    elif make_task == "install-macos":
+        run_task_install_macos()
+
+    # run macos
+    elif make_task == "run-macos":
+        run_task_run_macos()
+
+    # get wxwidgets
     elif make_task == "get-wx":
         run_task_get_wx()
 
-    # get BOSSA
+    # get bossa
     elif make_task == "get-bossa":
         run_task_get_bossa()
+
+    # patch bossa
+    elif make_task == "patch-bossa":
+        run_task_patch_bossa()
+
+    # remove bossa
+    elif make_task == "remove-bossa":
+        run_task_remove_bossa()
 
     # get ndk
     elif make_task == "get-ndk":
@@ -319,6 +362,45 @@ def run_task_clear():
     remove_file("Thumbs.db")
 
 
+def run_task_patch_android():
+    target_dir = os.path.join("build")
+
+    # patch
+    debug("Patch: BOSSA")
+
+    source_dir = os.path.join(target_dir, "BOSSA-master", "src")
+
+    # android log
+    source_file = os.path.join(source_dir, "bossac.cpp")
+    if not file_has_content(source_file, "#include <android/log.h>"):
+        replace_in_file(
+            source_file,
+            "fprintf(stdout,",
+            '__android_log_print(ANDROID_LOG_DEBUG, "BOSSA",',
+        )
+
+        replace_in_file(
+            source_file,
+            "fprintf(stderr,",
+            '__android_log_print(ANDROID_LOG_ERROR, "BOSSA",',
+        )
+
+        content = "#include <android/log.h>"
+        prepend_to_file(source_file, content)
+
+        debug("Applied: Android Log")
+
+    # flutter functions
+    source_file = os.path.join(source_dir, "bossac.cpp")
+    if not file_has_content(source_file, 'extern "C"'):
+        content = get_file_content(os.path.join("patches", "bossac_android.cpp"))
+        append_to_file(source_file, content)
+
+        debug("Applied: Bossac Flutter Functions")
+
+    debug("Patched: BOSSA")
+
+
 def run_task_build_android():
     debug("Build for Android...")
 
@@ -388,18 +470,126 @@ def run_task_install_android():
     archs = ["arm64-v8a", "armeabi-v7a", "x86", "x86_64"]
 
     dist_dir = os.path.join("dist", "android")
-    android_lib_dir = os.path.join(
+    lib_dir = os.path.join(
         "projects", "sample", "android", "app", "src", "main", "jniLibs"
     )
 
+    remove_dir(lib_dir)
+
     for arch in archs:
         install_dir = os.path.join(dist_dir, arch)
-        dest_dir = os.path.join(android_lib_dir, arch)
+        dest_dir = os.path.join(lib_dir, arch)
+
+        create_dir(dest_dir)
 
         from_file = os.path.join(install_dir, "libbossac.so")
         to_file = os.path.join(dest_dir, "libbossac.so")
 
         copy2(from_file, to_file)
+
+
+def run_task_patch_macos():
+    target_dir = os.path.join("build")
+
+    # patch
+    debug("Patch: BOSSA")
+
+    source_dir = os.path.join(target_dir, "BOSSA-master", "src")
+
+    # flutter functions
+    source_file = os.path.join(source_dir, "bossac.cpp")
+    if not file_has_content(source_file, 'extern "C"'):
+        content = get_file_content(os.path.join("patches", "bossac_macos.cpp"))
+        append_to_file(source_file, content)
+
+        debug("Applied: Bossac Flutter Functions")
+
+    debug("Patched: BOSSA")
+
+
+def run_task_build_macos():
+    debug("Build for macOS...")
+
+    build_dir = os.path.join("build", "macos")
+    dist_dir = os.path.join("dist", "macos")
+
+    remove_dir(build_dir)
+    create_dir(build_dir)
+
+    remove_dir(dist_dir)
+    create_dir(dist_dir)
+
+    archs = ["x86_64"]
+
+    for arch in archs:
+        # compile
+        arch_dir = os.path.join(build_dir, arch)
+        create_dir(arch_dir)
+
+        command = " ".join(["cmake ../../../", "-DTARGET_SYSTEM=macos",])
+        check_call(command, cwd=arch_dir, shell=True)
+
+        command = " ".join(["make"])
+        check_call(command, cwd=arch_dir, shell=True)
+
+        # install
+        install_dir = os.path.join(dist_dir, arch)
+        remove_dir(install_dir)
+        create_dir(install_dir)
+
+        from_file = os.path.join(arch_dir, "libbossac.dylib")
+        to_file = os.path.join(install_dir, "libbossac.dylib")
+
+        copy2(from_file, to_file)
+
+
+def run_task_test_macos():
+    debug("Test for macOS...")
+
+    archs = ["x86_64"]
+
+    dist_dir = os.path.join("dist", "macos")
+
+    for arch in archs:
+        install_dir = os.path.join(dist_dir, arch)
+        lib_file = "libbossac.dylib"
+
+        command = " ".join(["file", lib_file])
+        check_call(command, cwd=install_dir, shell=True)
+
+
+def run_task_install_macos():
+    debug("Install for macOS...")
+
+    archs = ["x86_64"]
+
+    dist_dir = os.path.join("dist", "macos")
+    lib_dir = os.path.join("projects", "cli", "lib")
+
+    remove_dir(lib_dir)
+
+    for arch in archs:
+        install_dir = os.path.join(dist_dir, arch)
+        dest_dir = os.path.join(lib_dir, arch)
+
+        create_dir(dest_dir)
+
+        from_file = os.path.join(install_dir, "libbossac.dylib")
+        to_file = os.path.join(dest_dir, "libbossac.dylib")
+
+        copy2(from_file, to_file)
+
+
+def run_task_run_macos():
+    debug("Run for macOS...")
+
+    project_dir = os.path.join("projects", "cli")
+
+    command = " ".join(["pub", "get"])
+    check_call(command, cwd=project_dir, shell=True)
+
+    command = " ".join(["dart", "cli.dart"])
+    check_call(command, cwd=project_dir, shell=True)
 
 
 def run_task_get_wx():
@@ -451,6 +641,10 @@ def run_task_get_bossa():
         tar.close()
         debug("Extracted: BOSSA")
 
+
+def run_task_patch_bossa():
+    target_dir = os.path.join("build")
+
     # patch
     debug("Patch: BOSSA")
 
@@ -465,35 +659,13 @@ def run_task_get_bossa():
 
         debug("Applied: Bossac Version")
 
-    # android log
-    source_file = os.path.join(source_dir, "bossac.cpp")
-    if not file_has_content(source_file, "#include <android/log.h>"):
-        replace_in_file(
-            source_file,
-            "fprintf(stdout,",
-            '__android_log_print(ANDROID_LOG_DEBUG, "BOSSA",',
-        )
-
-        replace_in_file(
-            source_file,
-            "fprintf(stderr,",
-            '__android_log_print(ANDROID_LOG_ERROR, "BOSSA",',
-        )
-
-        content = "#include <android/log.h>"
-        prepend_to_file(source_file, content)
-
-        debug("Applied: Android Log")
-
-    # flutter functions
-    source_file = os.path.join(source_dir, "bossac.cpp")
-    if not file_has_content(source_file, 'extern "C"'):
-        content = get_file_content(os.path.join("patches", "bossac.cpp"))
-        append_to_file(source_file, content)
-
-        debug("Applied: Bossac Flutter Functions")
-
     debug("Patched: BOSSA")
+
+
+def run_task_remove_bossa():
+    target_dir = os.path.join("build")
+    source_dir = os.path.join(target_dir, "BOSSA-master")
+    remove_dir(source_dir)
 
 
 def run_task_get_ndk():

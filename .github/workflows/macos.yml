@@ -1,4 +1,4 @@
-name: Bossa Mobile - Android
+name: Bossa Mobile - macOS
 
 on: [push]
 
@@ -15,14 +15,14 @@ jobs:
       matrix:
         config:
         - {
-            name: "Ubuntu Latest GCC",
-            os: ubuntu-latest
+            name: "macOS Latest Clang",
+            os: macos-latest
           }
         python-version: [3.7]
 
     steps:
     - uses: actions/checkout@v2
-
+    
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v1
       with:
@@ -86,10 +86,15 @@ jobs:
         python3 make.py run get-bossa
         python3 make.py run patch-bossa
 
-    - name: Android steps
+    - name: macOS steps
       run: |
-        python3 make.py run get-ndk
-        python3 make.py run patch-android
-        python3 make.py run build-android
-        python3 make.py run test-android
-        python3 make.py run install-android
+        python3 make.py run patch-macos
+        python3 make.py run build-macos
+        python3 make.py run test-macos
+        python3 make.py run install-macos
+
+    - name: Run dart example
+      uses: cedx/setup-dart@v2
+      run: |
+        python3 make.py run run-macos
+

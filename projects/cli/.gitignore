@@ -1,0 +1,4 @@
+lib
+*.lock
+.dart_tool
+.packages

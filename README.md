@@ -21,14 +21,33 @@ Only tool **bossac** will be generated because other tool depends from GUI and w
 pip3 install -r requirements.txt
 python3 make.py run get-wx
 python3 make.py run get-bossa
+python3 make.py run patch-bossa
 ```
 
 ## Android steps
 
 ```
 python3 make.py run get-ndk
+python3 make.py run patch-android
 python3 make.py run build-android
 python3 make.py run test-android
+python3 make.py run install-android
+```
+
+## macOS steps
+
+Requirements:
+- dart
+  - brew tap dart-lang/dart
+  - brew install dart
+
+
+```
+python3 make.py run patch-macos
+python3 make.py run build-macos
+python3 make.py run test-macos
+python3 make.py run install-macos
+python3 make.py run run-macos
 ```
 
 ## Custom functions to fluttter
