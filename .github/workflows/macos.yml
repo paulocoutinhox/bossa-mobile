@@ -93,8 +93,10 @@ jobs:
         python3 make.py run test-macos
         python3 make.py run install-macos
 
-    - name: Run dart example
+    - name: Setup dart
       uses: cedx/setup-dart@v2
+
+    - name: Run dart example
       run: |
         python3 make.py run run-macos
 

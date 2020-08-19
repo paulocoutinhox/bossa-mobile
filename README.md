@@ -2,6 +2,8 @@
 
 ![Bossa Mobile - Android](https://github.com/prsolucoes/bossa-mobile/workflows/Bossa%20Mobile%20-%20Android/badge.svg)
 
+![Bossa Mobile - macOS](https://github.com/prsolucoes/bossa-mobile/workflows/Bossa%20Mobile%20-%20macOS/badge.svg)
+
 Compiling project BOSSA for mobile.
 
 Only tool **bossac** will be generated because other tool depends from GUI and wxWidgets.
