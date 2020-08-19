@@ -36,6 +36,12 @@ Tasks:
   - test-macos
   - install-macos
   - run-macos
+
+  - patch-linux
+  - build-linux
+  - test-linux
+  - install-linux
+  - run-linux
 """
 
 import os
@@ -127,6 +133,26 @@ def main(options):
     # run macos
     elif make_task == "run-macos":
         run_task_run_macos()
+
+    # patch linux library
+    elif make_task == "patch-linux":
+        run_task_patch_linux()
+
+    # build linux library
+    elif make_task == "build-linux":
+        run_task_build_linux()
+
+    # test linux
+    elif make_task == "test-linux":
+        run_task_test_linux()
+
+    # install linux
+    elif make_task == "install-linux":
+        run_task_install_linux()
+
+    # run linux
+    elif make_task == "run-linux":
+        run_task_run_linux()
 
     # get wxwidgets
     elif make_task == "get-wx":
@@ -582,6 +608,110 @@ def run_task_install_macos():
 
 def run_task_run_macos():
     debug("Run for macOS...")
+
+    project_dir = os.path.join("projects", "cli")
+
+    command = " ".join(["pub", "get"])
+    check_call(command, cwd=project_dir, shell=True)
+
+    command = " ".join(["dart", "cli.dart"])
+    check_call(command, cwd=project_dir, shell=True)
+
+
+def run_task_patch_linux():
+    target_dir = os.path.join("build")
+
+    # patch
+    debug("Patch: BOSSA")
+
+    source_dir = os.path.join(target_dir, "BOSSA-master", "src")
+
+    # flutter functions
+    source_file = os.path.join(source_dir, "bossac.cpp")
+    if not file_has_content(source_file, 'extern "C"'):
+        content = get_file_content(os.path.join("patches", "bossac_linux.cpp"))
+        append_to_file(source_file, content)
+
+        debug("Applied: Bossac Flutter Functions")
+
+    debug("Patched: BOSSA")
+
+
+def run_task_build_linux():
+    debug("Build for Linux...")
+
+    build_dir = os.path.join("build", "linux")
+    dist_dir = os.path.join("dist", "linux")
+
+    remove_dir(build_dir)
+    create_dir(build_dir)
+
+    remove_dir(dist_dir)
+    create_dir(dist_dir)
+
+    archs = ["x86_64"]
+
+    for arch in archs:
+        # compile
+        arch_dir = os.path.join(build_dir, arch)
+        create_dir(arch_dir)
+
+        command = " ".join(["cmake ../../../", "-DTARGET_SYSTEM=linux",])
+        check_call(command, cwd=arch_dir, shell=True)
+
+        command = " ".join(["make"])
+        check_call(command, cwd=arch_dir, shell=True)
+
+        # install
+        install_dir = os.path.join(dist_dir, arch)
+        remove_dir(install_dir)
+        create_dir(install_dir)
+
+        from_file = os.path.join(arch_dir, "libbossac.so")
+        to_file = os.path.join(install_dir, "libbossac.so")
+
+        copy2(from_file, to_file)
+
+
+def run_task_test_linux():
+    debug("Test for Linux...")
+
+    archs = ["x86_64"]
+
+    dist_dir = os.path.join("dist", "linux")
+
+    for arch in archs:
+        install_dir = os.path.join(dist_dir, arch)
+        lib_file = "libbossac.so"
+
+        command = " ".join(["file", lib_file])
+        check_call(command, cwd=install_dir, shell=True)
+
+
+def run_task_install_linux():
+    debug("Install for Linux...")
+
+    archs = ["x86_64"]
+
+    dist_dir = os.path.join("dist", "linux")
+    lib_dir = os.path.join("projects", "cli", "lib")
+
+    remove_dir(lib_dir)
+
+    for arch in archs:
+        install_dir = os.path.join(dist_dir, arch)
+        dest_dir = os.path.join(lib_dir, arch)
+
+        create_dir(dest_dir)
+
+        from_file = os.path.join(install_dir, "libbossac.so")
+        to_file = os.path.join(dest_dir, "libbossac.so")
+
+        copy2(from_file, to_file)
+
+
+def run_task_run_linux():
+    debug("Run for linux...")
 
     project_dir = os.path.join("projects", "cli")
 

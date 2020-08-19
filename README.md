@@ -52,6 +52,21 @@ python3 make.py run install-macos
 python3 make.py run run-macos
 ```
 
+## Linux steps
+
+Requirements:
+- dart
+  - sudo apt-get install dart
+
+
+```
+python3 make.py run patch-linux
+python3 make.py run build-linux
+python3 make.py run test-linux
+python3 make.py run install-linux
+python3 make.py run run-linux
+```
+
 ## Custom functions to fluttter
 
 Patch automatically add this lines to the end of file "bossac.cpp":

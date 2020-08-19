@@ -59,6 +59,14 @@ elseif(${TARGET_SYSTEM} MATCHES "android")
     )
 
     message("> System: ANDROID")
+elseif(${TARGET_SYSTEM} MATCHES "windows")
+    set(COMMON_SRCS
+        ${COMMON_SRCS}
+        ${SOURCE_CODE_DIR}/WinSerialPort.cpp
+        ${SOURCE_CODE_DIR}/WinPortFactory.cpp
+    )
+
+    message("> System: WINDOWS")
 else()
    message(FATAL_ERROR "Unsupported system detected, check configuration!")
 endif()
@@ -69,15 +77,6 @@ set(
     ${BOSSAC_SRCS}
     CACHE INTERNAL ""
 )
-
-if(${TARGET_SYSTEM} MATCHES "macos")
-    set_target_properties(${PROJECT_CONFIG_NAME} PROPERTIES
-        XCODE_ATTRIBUTE_SKIP_INSTALL YES
-        XCODE_ATTRIBUTE_INSTALL_PATH "@loader_path/Frameworks"
-        VERSION "1.0.0"
-        SOVERSION "1.0.0"
-    )
-endif()
 
 #add_executable(bossac ${ALL_FILES})
 add_library(bossac SHARED ${ALL_FILES})
