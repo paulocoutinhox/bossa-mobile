@@ -8,7 +8,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -O2 -std=c++11 -DVERSION=\"${P_VER
 set(CMAKE_EXE_LINKER_FLAGS, "${CMAKE_EXE_LINKER_FLAGS} -Wl,--as-needed")
 set(TARGET_SYSTEM CACHE STRING "Define the target system to build BOSSA")
 set(SOURCE_CODE_DIR "build/BOSSA-master/src")
-set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE Debug)
 
 include_directories("build/wxWidgets-3.1.4/include")
 

@@ -30,13 +30,58 @@ main() {
     throw Exception("Your system is not supported!");
   }
 
-  // open native lib
-  final nativeLib = DynamicLibrary.open(libPath);
+  // close function (linux and android) for `dlclose` symbol lookup
+  final DynamicLibrary dlLib = DynamicLibrary.process();
 
-  // lookup function
-  MainFunction function = nativeLib
-      .lookup<NativeFunction<MainFunctionFFI>>("bossa_main")
+  final int Function(Pointer<Void>) dlCloseFun = dlLib
+      .lookup<NativeFunction<Int32 Function(Pointer<Void>)>>("dlclose")
       .asFunction();
 
-  function(0, Utf8.toUtf8("bossac --help"));
+  {
+    // open native lib
+    final nativeLib = DynamicLibrary.open(libPath);
+
+    // lookup function
+    MainFunction function = nativeLib
+        .lookup<NativeFunction<MainFunctionFFI>>("bossa_main")
+        .asFunction();
+
+    // first call
+    function(
+        0,
+        Utf8.toUtf8(
+          "bossac -i -d --port=/dev/ttyS0 -U -i -e -w -v FevoFirmware.bin -R",
+        ));
+
+    // close lib for reload
+    int retClose = dlCloseFun(nativeLib.handle);
+
+    if (retClose == 0) {
+      print("Native library closed");
+    }
+  }
+
+  {
+    // open native lib
+    final nativeLib = DynamicLibrary.open(libPath);
+
+    // lookup function
+    MainFunction function = nativeLib
+        .lookup<NativeFunction<MainFunctionFFI>>("bossa_main")
+        .asFunction();
+
+    // second call
+    function(
+        0,
+        Utf8.toUtf8(
+          "bossac --help",
+        ));
+
+    // close lib for reload
+    int retClose = dlCloseFun(nativeLib.handle);
+
+    if (retClose == 0) {
+      print("Native library closed");
+    }
+  }
 }

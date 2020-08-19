@@ -19,9 +19,7 @@ typedef TestFlutterPointerFunction = Pointer<Utf8> Function(
 typedef TestFlutterPointerFunctionFFI = Pointer<Utf8> Function(
     Int32 argc, Pointer<Utf8> argv);
 
-final DynamicLibrary nativeLib = Platform.isAndroid
-    ? DynamicLibrary.open("libbossac.so")
-    : DynamicLibrary.process();
+DynamicLibrary nativeLib;
 
 class MyApp extends StatelessWidget {
   @override
@@ -44,11 +42,37 @@ class HomePageView extends StatefulWidget {
 }
 
 class _HomePageViewState extends State<HomePageView> {
-  final controller = TextEditingController(text: "bossac -i /dev/ttyS0");
+  final controller = TextEditingController(
+    text: "bossac -i -d --port=/dev/ttyS0 -U -i -e -w -v FevoFirmware.bin -R",
+  );
 
   var consoleMessages = "> Output message will go here";
 
+  void doOpenLib() {
+    nativeLib = Platform.isAndroid
+        ? DynamicLibrary.open("libbossac.so")
+        : DynamicLibrary.process();
+  }
+
+  void doCloseLib() {
+    final DynamicLibrary dlLib = DynamicLibrary.process();
+
+    final int Function(Pointer<Void>) dlCloseFun = dlLib
+        .lookup<NativeFunction<Int32 Function(Pointer<Void>)>>("dlclose")
+        .asFunction();
+
+    // close lib for reload
+    int retClose = dlCloseFun(nativeLib.handle);
+
+    if (retClose == 0) {
+      print("Native library closed");
+      nativeLib = null;
+    }
+  }
+
   void doExecuteTest() {
+    doOpenLib();
+
     TestFlutterFunction function = nativeLib
         .lookup<NativeFunction<TestFlutterFunctionFFI>>("test_flutter_void")
         .asFunction();
@@ -56,9 +80,13 @@ class _HomePageViewState extends State<HomePageView> {
     doDebug("[doExecuteTest]");
 
     function();
+
+    doCloseLib();
   }
 
   void doExecuteTestPointer() {
+    doOpenLib();
+
     TestFlutterPointerFunction function = nativeLib
         .lookup<NativeFunction<TestFlutterPointerFunctionFFI>>(
             "test_flutter_pointer")
@@ -69,9 +97,13 @@ class _HomePageViewState extends State<HomePageView> {
     var result = function(3, Utf8.toUtf8(controller.text));
 
     doDebug("Result: ${Utf8.fromUtf8(result)}");
+
+    doCloseLib();
   }
 
   void doExecuteMain() {
+    doOpenLib();
+
     MainFunction function = nativeLib
         .lookup<NativeFunction<MainFunctionFFI>>("bossa_main")
         .asFunction();
@@ -81,6 +113,8 @@ class _HomePageViewState extends State<HomePageView> {
     var result = function(0, Utf8.toUtf8(controller.text));
 
     doDebug("Return: $result");
+
+    doCloseLib();
   }
 
   void doDebug(String message) {

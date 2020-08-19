@@ -776,7 +776,7 @@ def run_task_patch_bossa():
     target_dir = os.path.join("build")
 
     # patch
-    debug("Patch: BOSSA")
+    debug("Patching...")
 
     source_dir = os.path.join(target_dir, "BOSSA-master", "src")
 
@@ -784,12 +784,25 @@ def run_task_patch_bossa():
     source_file = os.path.join(source_dir, "bossac.cpp")
     if not file_has_content(source_file, "(BOSSA) 1.9.1"):
         replace_in_file(
-            source_file, 'Version " VERSION "', "1.9.1",
+            source_file, 'Version " VERSION "', "Version 1.9.1",
         )
 
         debug("Applied: Bossac Version")
 
-    debug("Patched: BOSSA")
+    # extra arguments log
+    source_file = os.path.join(source_dir, "bossac.cpp")
+    if not file_has_content(
+        source_file, "extra arguments found (parsed: %d | sent: %d)"
+    ):
+        replace_in_file(
+            source_file,
+            'fprintf(stderr, "%s: extra arguments found\\n", argv[0]);',
+            'fprintf(stderr, "%s: extra arguments found (parsed: %d | sent: %d)\\n", argv[0], args, argc);',
+        )
+
+        debug("Applied: Extra arguments found")
+
+    debug("Patched")
 
 
 def run_task_remove_bossa():

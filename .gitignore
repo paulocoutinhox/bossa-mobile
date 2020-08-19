@@ -9,3 +9,4 @@ dist
 *.tar.bz2
 __pycache__
 *.pyc
+*.txt.user
