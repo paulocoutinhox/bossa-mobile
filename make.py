@@ -802,6 +802,19 @@ def run_task_patch_bossa():
 
         debug("Applied: Extra arguments found")
 
+    # reset cmd parse
+    source_file = os.path.join(source_dir, "CmdOpts.cpp")
+    if not file_has_content(
+        source_file, "optind = 1;"
+    ):
+        replace_in_file(
+            source_file,
+            'struct option long_opts[_numOpts + 1];',
+            'optind = 1;\n    struct option long_opts[_numOpts + 1];',
+        )
+
+        debug("Applied: Reset cmd parse")
+
     debug("Patched")
 
 

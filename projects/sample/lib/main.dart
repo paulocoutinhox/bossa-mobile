@@ -19,7 +19,9 @@ typedef TestFlutterPointerFunction = Pointer<Utf8> Function(
 typedef TestFlutterPointerFunctionFFI = Pointer<Utf8> Function(
     Int32 argc, Pointer<Utf8> argv);
 
-DynamicLibrary nativeLib;
+final DynamicLibrary nativeLib = Platform.isAndroid
+    ? DynamicLibrary.open("libbossac.so")
+    : DynamicLibrary.process();
 
 class MyApp extends StatelessWidget {
   @override
@@ -48,31 +50,7 @@ class _HomePageViewState extends State<HomePageView> {
 
   var consoleMessages = "> Output message will go here";
 
-  void doOpenLib() {
-    nativeLib = Platform.isAndroid
-        ? DynamicLibrary.open("libbossac.so")
-        : DynamicLibrary.process();
-  }
-
-  void doCloseLib() {
-    final DynamicLibrary dlLib = DynamicLibrary.process();
-
-    final int Function(Pointer<Void>) dlCloseFun = dlLib
-        .lookup<NativeFunction<Int32 Function(Pointer<Void>)>>("dlclose")
-        .asFunction();
-
-    // close lib for reload
-    int retClose = dlCloseFun(nativeLib.handle);
-
-    if (retClose == 0) {
-      print("Native library closed");
-      nativeLib = null;
-    }
-  }
-
   void doExecuteTest() {
-    doOpenLib();
-
     TestFlutterFunction function = nativeLib
         .lookup<NativeFunction<TestFlutterFunctionFFI>>("test_flutter_void")
         .asFunction();
@@ -80,13 +58,9 @@ class _HomePageViewState extends State<HomePageView> {
     doDebug("[doExecuteTest]");
 
     function();
-
-    doCloseLib();
   }
 
   void doExecuteTestPointer() {
-    doOpenLib();
-
     TestFlutterPointerFunction function = nativeLib
         .lookup<NativeFunction<TestFlutterPointerFunctionFFI>>(
             "test_flutter_pointer")
@@ -97,13 +71,9 @@ class _HomePageViewState extends State<HomePageView> {
     var result = function(3, Utf8.toUtf8(controller.text));
 
     doDebug("Result: ${Utf8.fromUtf8(result)}");
-
-    doCloseLib();
   }
 
   void doExecuteMain() {
-    doOpenLib();
-
     MainFunction function = nativeLib
         .lookup<NativeFunction<MainFunctionFFI>>("bossa_main")
         .asFunction();
@@ -113,8 +83,6 @@ class _HomePageViewState extends State<HomePageView> {
     var result = function(0, Utf8.toUtf8(controller.text));
 
     doDebug("Return: $result");
-
-    doCloseLib();
   }
 
   void doDebug(String message) {
